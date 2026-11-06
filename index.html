@@ -599,14 +599,18 @@ function peopleHTML(type,title){
             <strong>${title}</strong>
         </div>
 
+        <div class="hint" style="margin:0 0 10px;padding:9px 12px;background:#eef6ff;border-radius:8px;line-height:1.7">
+            ما في مشكلة تلصق عمودي الاسم والرقم الذاتي مع بعض بأي مربع من المربعين، وبأي ترتيب؛ الأداة بتتعرف عليهم وبتفرز الأسماء والأرقام تلقائياً بالمكان الصحيح.
+        </div>
         <div class="people-inputs">
             <div class="field">
                 <label>الأسماء - الصق الأسماء من Excel</label>
                 <textarea
                     data-people-names="${type}"
                     placeholder="الصق الأسماء هنا...&#10;كل اسم في سطر مستقل"
-                    oninput="updatePeopleCount(this)"></textarea>
-                <span class="hint">انسخ عمود الأسماء من Excel والصقه مباشرة هنا.</span>
+                    oninput="updatePeopleCount(this)"
+                    onpaste="handlePeoplePaste(event,this)"></textarea>
+                <span class="hint">يمكنك لصق الأسماء وحدها، أو لصق العمودين معاً هنا بأي ترتيب؛ الأداة ستفرزهما تلقائياً.</span>
             </div>
 
             <div class="field">
@@ -614,8 +618,9 @@ function peopleHTML(type,title){
                 <textarea
                     data-people-ids="${type}"
                     placeholder="الصق الأرقام الذاتية هنا...&#10;كل رقم في سطر مستقل"
-                    oninput="updatePeopleCount(this)"></textarea>
-                <span class="hint">انسخ عمود الأرقام الذاتية والصقه هنا بنفس ترتيب الأسماء.</span>
+                    oninput="updatePeopleCount(this)"
+                    onpaste="handlePeoplePaste(event,this)"></textarea>
+                <span class="hint">يمكنك لصق الأرقام وحدها، أو لصق العمودين معاً هنا بأي ترتيب؛ الأداة ستفرزهما تلقائياً.</span>
             </div>
         </div>
 
@@ -627,6 +632,48 @@ function peopleHTML(type,title){
 
         <div class="match-warning" data-match-warning></div>
     </div>`;
+}
+
+/*
+  دعم لصق عمودي الاسم والرقم الذاتي معاً من Excel بأي ترتيب.
+  نكتشف العمود الرقمي تلقائياً، سواء تم اللصق في مربع الأسماء أو الأرقام.
+*/
+function isLikelySelfId(value){
+    const text=String(value??"").trim();
+    if(!text)return false;
+    // الأرقام العربية والهندية واللاتينية، مع السماح بالفواصل الشائعة.
+    return /[0-9٠-٩۰-۹]/.test(text) && /^[0-9٠-٩۰-۹\s\-–—./]+$/.test(text);
+}
+
+function handlePeoplePaste(event,element){
+    const clipboard=event.clipboardData || window.clipboardData;
+    if(!clipboard)return;
+    const pasted=clipboard.getData("text");
+    if(!pasted || !pasted.includes("\t"))return; // لصق عمود واحد: السلوك الطبيعي
+
+    const box=element.closest(".people-box");
+    if(!box)return;
+    const type=box.dataset.peopleBox;
+    const rows=pasted.replace(/\r\n/g,"\n").replace(/\r/g,"\n").split("\n");
+    while(rows.length && rows[rows.length-1]==="")rows.pop();
+    if(!rows.length || !rows.some(row=>row.includes("\t")))return;
+
+    const parsed=rows.map(row=>{
+        const cells=row.split("\t");
+        return [(cells[0]??"").trim(),(cells[1]??"").trim()];
+    });
+    const filled=parsed.filter(row=>row[0] || row[1]);
+    const firstNumeric=filled.filter(row=>row[0] && isLikelySelfId(row[0])).length;
+    const secondNumeric=filled.filter(row=>row[1] && isLikelySelfId(row[1])).length;
+    const reverseOrder=firstNumeric>secondNumeric;
+
+    const names=parsed.map(row=>row[reverseOrder?1:0]);
+    const ids=parsed.map(row=>row[reverseOrder?0:1]);
+
+    event.preventDefault();
+    box.querySelector(`[data-people-names="${type}"]`).value=names.join("\n");
+    box.querySelector(`[data-people-ids="${type}"]`).value=ids.join("\n");
+    updatePeopleCount(element);
 }
 
 function updatePeopleCount(element){
