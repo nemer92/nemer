@@ -173,8 +173,12 @@ header .header-description{color:#e2c98c;font-size:12px;margin:0}
 .actions-panel .btn{min-width:220px;padding:13px 20px;font-size:15px}
 footer{
     text-align:center;background:var(--dark);color:#e6ebe7;
-    padding:16px;font-size:12px;margin-top:35px;
+    padding:15px 12px;font-size:12px;margin-top:35px;line-height:1.9;
 }
+.footer-credit{display:flex;justify-content:center;align-items:center;gap:7px 13px;flex-wrap:wrap;margin-top:5px;color:#d6e2da}
+.footer-credit strong{color:#f0d69b}
+.footer-credit a{color:#a9d0ff;text-decoration:none}
+.footer-version{display:inline-block;border:1px solid #718579;border-radius:20px;padding:1px 9px;font-size:11px;color:#f0d69b}
 .modal{
     display:none;position:fixed;z-index:1000;inset:0;background:#0008;
     align-items:center;justify-content:center;padding:15px;
@@ -345,7 +349,15 @@ footer{
 
 </main>
 
-<footer id="footerText">© جميع الحقوق محفوظة | دائرة العلاقات والتنسيق</footer>
+<footer id="footerText">
+  <div>© جميع الحقوق محفوظة | <span id="footerDepartment">دائرة العلاقات والتنسيق</span></div>
+  <div class="footer-credit">
+    <span>تصميم وتطوير: <strong>أحمد وليد النمر</strong></span>
+    <span>للتواصل: <strong dir="ltr">0936534195</strong></span>
+    <a href="https://www.facebook.com/viip4" target="_blank" rel="noopener noreferrer">حساب فيسبوك</a>
+    <span class="footer-version">الإصدار 0.2</span>
+  </div>
+</footer>
 
 <div class="modal" id="settingsModal">
 <div class="modal-content">
@@ -380,7 +392,7 @@ footer{
 
 <div class="modal" id="infoModal">
 <div class="modal-content info-content">
-    <div class="info-header"><h2>معلومات عن الأداة</h2><p>نظام إعداد التقرير الشهري لمديرية شؤون الجرحى</p></div>
+    <div class="info-header"><h2>معلومات عن الأداة</h2><p>نظام إعداد التقرير الشهري لمديرية شؤون الجرحى · الإصدار 0.2</p></div>
     <div class="info-body">
         <div class="info-feature"><div class="feature-icon">📝</div><div><strong>إعداد التقرير الشهري</strong><p>إدخال بيانات التقرير وأقسامه وحقوله، وتنظيم المعلومات ضمن نموذج موحّد قبل التصدير.</p></div></div>
         <div class="info-feature"><div class="feature-icon">📊</div><div><strong>المشاريع والإحصائيات</strong><p>تسجيل بيانات المشاريع الإغاثية ومتابعة أعداد المنفّذ منها وما هو قيد التنفيذ، وإدخال بيانات الزيارات والإحصائيات المتاحة في التقرير.</p></div></div>
@@ -476,7 +488,7 @@ function loadSettings(){
     document.getElementById("settingMinistry").value=settings.ministry||DEFAULT_SETTINGS.ministry;
     document.getElementById("settingDirectorate").value=settings.directorate||DEFAULT_SETTINGS.directorate;
     document.getElementById("settingDepartment").value=settings.department||DEFAULT_SETTINGS.department;
-    document.getElementById("footerText").textContent="© جميع الحقوق محفوظة | "+(settings.department||DEFAULT_SETTINGS.department);
+    document.getElementById("footerDepartment").textContent=settings.department||DEFAULT_SETTINGS.department;
 
     const logo=localStorage.getItem("database_tool_logo");
     if(logo)document.getElementById("mainLogo").src=logo;
