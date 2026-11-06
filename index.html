@@ -298,8 +298,7 @@ footer{
 </div>
 <div class="panel" style="background:#f7faf7;border:1px dashed #c8d5cb;margin:12px 0">
  <h3 style="margin:0 0 10px;color:var(--green)">مفرغة Word المعتمدة</h3>
- <p class="hint" id="templateStatus">حدد مجلد الأداة مرة واحدة، مع وجود الملف NM.docx بداخله. ستستخدمه الأداة تلقائياً عند التصدير.</p>
- <button class="btn btn-light btn-small" onclick="chooseTemplateFolder()">📁 تحديد مجلد الأداة / المفرغة NM.docx</button>
+ <p class="hint">تُحمّل المفرغة NM.docx تلقائياً من نفس موقع الأداة عند تصدير التقرير.</p>
 </div>
 <div class="actions-panel">
     <button class="btn btn-primary" onclick="exportWord()">📄 تصدير التقرير إلى Word (DOCX)</button>
@@ -1359,40 +1358,15 @@ ${sectionHTML("مقترحات لتطوير العمل",makeTable(
 </html>`;
 }
 
-// حفظ قالب DOCX داخل IndexedDB حتى لا يضيع عند إغلاق المتصفح
-const TEMPLATE_DB="monthly_report_template_db",TEMPLATE_STORE="templates",TEMPLATE_KEY="approved_docx",TEMPLATE_FOLDER_KEY="nm_docx_folder";
-function openTemplateDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(TEMPLATE_DB,1);req.onupgradeneeded=()=>req.result.createObjectStore(TEMPLATE_STORE);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
-async function saveFolderHandle(handle){const db=await openTemplateDB();return new Promise((resolve,reject)=>{const tx=db.transaction(TEMPLATE_STORE,"readwrite");tx.objectStore(TEMPLATE_STORE).put(handle,TEMPLATE_FOLDER_KEY);tx.oncomplete=()=>{db.close();resolve();};tx.onerror=()=>{db.close();reject(tx.error);};});}
-async function getFolderHandle(){const db=await openTemplateDB();return new Promise((resolve,reject)=>{const req=db.transaction(TEMPLATE_STORE).objectStore(TEMPLATE_STORE).get(TEMPLATE_FOLDER_KEY);req.onsuccess=()=>{db.close();resolve(req.result||null);};req.onerror=()=>{db.close();reject(req.error);};});}
-async function chooseTemplateFolder(){
- try{
-  if(!window.showDirectoryPicker){alert("المتصفح الحالي لا يدعم اختيار المجلد. افتح الأداة بمتصفح Chrome أو Edge حديث.");return;}
-  const handle=await window.showDirectoryPicker({mode:"read"});
-  const fileHandle=await handle.getFileHandle("NM.docx");
-  const file=await fileHandle.getFile();
-  if(!file.name.toLowerCase().endsWith(".docx"))throw new Error("الملف NM.docx ليس ملف Word صالحاً.");
-  await saveFolderHandle(handle);
-  document.getElementById("templateStatus").textContent="تم ربط المجلد بنجاح. المفرغة NM.docx جاهزة للتصدير.";
-  alert("تم العثور على NM.docx وربط المجلد بنجاح.");
- }catch(e){
-  if(e.name!=="AbortError")alert(e.name==="NotFoundError"?"لم يتم العثور على الملف NM.docx داخل المجلد المحدد. ضع المفرغة بجانب ملف HTML ثم أعد المحاولة.":"تعذر الوصول إلى المجلد أو الملف: "+e.message);
- }
-}
+// تحميل قالب Word تلقائياً من نفس مجلد الأداة على الاستضافة
 async function getNMTemplateFile(){
- const handle=await getFolderHandle();
- if(!handle)throw new Error("يرجى تحديد مجلد الأداة مرة واحدة من الزر الموجود فوق التصدير، مع وجود NM.docx بداخله.");
- let permission=await handle.queryPermission({mode:"read"});
- if(permission!=="granted")permission=await handle.requestPermission({mode:"read"});
- if(permission!=="granted")throw new Error("لم يتم منح إذن قراءة المجلد. اضغط زر تحديد مجلد الأداة وامنح الإذن.");
- const fileHandle=await handle.getFileHandle("NM.docx");
- return await fileHandle.getFile();
+ const templateUrl=new URL("./NM.docx",window.location.href);
+ const response=await fetch(templateUrl.href,{cache:"no-store"});
+ if(!response.ok)throw new Error("تعذر تحميل المفرغة NM.docx من الاستضافة (HTTP "+response.status+"). تأكد من رفع الملف بالاسم NM.docx بجانب index.html.");
+ const templateBlob=await response.blob();
+ if(templateBlob.size<1000)throw new Error("الملف NM.docx الذي تم تحميله فارغ أو غير مكتمل.");
+ return templateBlob;
 }
-async function updateTemplateStatus(){
- const el=document.getElementById("templateStatus");if(!el)return;
- try{const h=await getFolderHandle();el.textContent=h?"تم حفظ مجلد المفرغة. سيتم استخدام NM.docx تلقائياً عند التصدير.":"حدد مجلد الأداة مرة واحدة، مع وجود الملف NM.docx بداخله.";}
- catch(e){el.textContent="حدد مجلد الأداة مرة واحدة، مع وجود الملف NM.docx بداخله.";}
-}
-document.addEventListener("DOMContentLoaded",()=>{updateTemplateStatus();});
 
 function xmlEscape(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function setCellText(cell,value){
