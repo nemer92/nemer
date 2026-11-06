@@ -105,8 +105,18 @@ header .header-description{color:#e2c98c;font-size:12px;margin:0}
 }
 .people-header strong{font-size:14px;color:var(--green)}
 .people-inputs{
-    display:grid;grid-template-columns:1fr 1fr;gap:13px;
+    display:grid;grid-template-columns:minmax(0,1fr) 112px minmax(0,1fr);gap:10px;align-items:stretch;
 }
+.people-match-visual{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+    margin-top:25px;padding:12px 6px;background:#eaf1ec;border:1px solid #d2dfd5;
+    border-radius:10px;text-align:center;color:var(--green);
+}
+.people-match-visual strong{font-size:11px;line-height:1.6}
+.people-match-pair{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;font-size:12px;font-weight:800;white-space:nowrap}
+.people-match-pair span{display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;border-radius:50%;background:#fff;border:1px solid #b9cbbd}
+.people-match-pair i{font-style:normal;font-size:14px;color:#a17a32}
+.people-match-note{font-size:10px;line-height:1.5;color:#53695a}
 .people-inputs textarea{
     width:100%;min-height:190px;resize:vertical;
     border:1px solid #ccd8ce;background:white;border-radius:8px;
@@ -116,6 +126,29 @@ header .header-description{color:#e2c98c;font-size:12px;margin:0}
 .people-inputs textarea:focus{
     border-color:var(--green);box-shadow:0 0 0 3px #244b3d12;
 }
+
+/* إدخال الأسماء والأرقام كسجلات مزدوجة واضحة */
+.people-inputs{display:block}
+.people-pair-editor{background:#fff;border:1px solid #d6e0d8;border-radius:10px;overflow:hidden}
+.people-pair-head,.people-pair-row{display:grid;grid-template-columns:42px minmax(0,1fr) minmax(0,1fr);align-items:center;gap:8px;padding:8px 12px}
+.people-pair-head{background:#eaf1ec;color:var(--green);font-size:12px;font-weight:800}
+.people-pair-row{border-top:1px solid #edf1ed}
+.people-pair-row:nth-child(odd){background:#fbfcfb}
+.people-pair-index{color:#718276;text-align:center;font-size:12px;font-weight:800}
+.people-pair-row input{width:100%;min-width:0;border:1px solid #d7e0d9;border-radius:7px;padding:9px 10px;font:13px 'Cairo',sans-serif;line-height:1.5;outline:none}
+.people-pair-row input:focus{border-color:var(--green);box-shadow:0 0 0 2px #244b3d12}
+.people-pair-add{display:flex;justify-content:flex-start;padding:9px 12px;border-top:1px solid #edf1ed}
+.people-pair-add button{border:0;background:#e9efeb;color:var(--green);border-radius:7px;padding:7px 12px;font:700 12px 'Cairo',sans-serif;cursor:pointer}
+.people-source-textarea{display:none!important}
+
+/* جدول إدخال مضمّن بارتفاع محدود وتمرير داخلي، دون نافذة منبثقة */
+.people-editor-summary{display:flex;align-items:center;justify-content:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:9px}
+.people-editor-inline{background:#fff;border:1px solid #d6e0d8;border-radius:10px;overflow:hidden}
+.people-editor-inline [data-people-rows]{max-height:280px;overflow-y:auto;overscroll-behavior:contain}
+.people-editor-inline .people-pair-head{position:sticky;top:0;z-index:2}
+.people-editor-inline .people-pair-add{background:#fbfcfb}
+@media(max-width:650px){.people-editor-inline [data-people-rows]{max-height:230px}}
+@media(max-width:650px){.people-pair-head,.people-pair-row{grid-template-columns:28px minmax(0,1fr) minmax(0,1fr);gap:5px;padding:7px}.people-pair-row input{padding:8px 6px;font-size:12px}.people-match-visual{display:none}}
 .people-counts{
     display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;
 }
@@ -182,6 +215,12 @@ footer{
 @media(max-width:650px){.info-body{grid-template-columns:1fr}}
 @media(max-width:850px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){header{padding:15px}.header-top{display:flex;flex-direction:column;align-items:center;gap:12px}.header-actions{position:static;order:0;justify-content:center}.ministry-brand{position:static;order:1;justify-content:center;text-align:center;flex-direction:column}.department-line{order:2}.header-top h1{font-size:21px}.grid,.grid.two,.people-inputs{grid-template-columns:1fr}.panel{padding:15px}.actions-panel .btn{width:100%}.page-title h1{font-size:22px}}
+@media (max-width:700px){
+.people-inputs{grid-template-columns:1fr;}
+.people-match-visual{margin-top:0;flex-direction:row;flex-wrap:wrap;gap:7px;padding:9px;}
+.people-match-visual strong,.people-match-note{width:100%;}
+.people-match-pair{width:auto;}
+}
 </style>
 </head>
 
@@ -598,44 +637,46 @@ function getLineIssues(value){
 function peopleHTML(type,title){
     return `
     <div class="people-box" data-people-box="${type}">
-        <div class="people-header">
-            <strong>${title}</strong>
+        <div class="people-editor-summary">
+            <strong style="color:var(--green);font-size:14px">${title}</strong>
         </div>
-
-        <div class="hint" style="margin:0 0 10px;padding:9px 12px;background:#eef6ff;border-radius:8px;line-height:1.7">
-            ما في مشكلة تلصق عمودي الاسم والرقم الذاتي مع بعض بأي مربع من المربعين، وبأي ترتيب؛ الأداة بتتعرف عليهم وبتفرز الأسماء والأرقام تلقائياً بالمكان الصحيح.
+        <div class="hint" style="margin:0 0 9px;padding:8px 11px;background:#eef6ff;border-radius:8px;line-height:1.7">
+            كل سطر يربط اسماً ثلاثياً برقمه الذاتي المقابل. أضف أسطراً عند الحاجة أو الصق العمودين من Excel معاً.
         </div>
-        <div class="people-inputs">
-            <div class="field">
-                <label>الأسماء - الصق الأسماء من Excel</label>
-                <textarea
-                    data-people-names="${type}"
-                    placeholder="الصق الأسماء هنا...&#10;كل اسم في سطر مستقل"
-                    oninput="updatePeopleCount(this)"
-                    onpaste="handlePeoplePaste(event,this)"></textarea>
-                <span class="hint">يمكنك لصق الأسماء وحدها، أو لصق العمودين معاً هنا بأي ترتيب؛ الأداة ستفرزهما تلقائياً.</span>
-            </div>
-
-            <div class="field">
-                <label>الأرقام الذاتية - مقابل الأسماء بنفس الترتيب</label>
-                <textarea
-                    data-people-ids="${type}"
-                    placeholder="الصق الأرقام الذاتية هنا...&#10;كل رقم في سطر مستقل"
-                    oninput="updatePeopleCount(this)"
-                    onpaste="handlePeoplePaste(event,this)"></textarea>
-                <span class="hint">يمكنك لصق الأرقام وحدها، أو لصق العمودين معاً هنا بأي ترتيب؛ الأداة ستفرزهما تلقائياً.</span>
-            </div>
+        <div class="people-editor-inline">
+            <div class="people-pair-head"><span>#</span><span>الاسم الثلاثي</span><span>الرقم الذاتي</span></div>
+            <div data-people-rows="${type}"></div>
+            <div class="people-pair-add"><button type="button" onclick="addPeopleRow(this)">＋ إضافة سطر جديد</button></div>
         </div>
-
         <div class="people-counts">
             <span class="count-label">عدد الأسماء: <b data-name-count>0</b></span>
             <span class="count-label">عدد الأرقام: <b data-id-count>0</b></span>
             <span class="count-label">السجلات المتطابقة: <b data-match-count>0</b></span>
         </div>
-
         <div class="match-warning" data-match-warning></div>
+        <div class="people-inputs">
+            <textarea class="people-source-textarea" data-people-names="${type}" aria-hidden="true" tabindex="-1"></textarea>
+            <textarea class="people-source-textarea" data-people-ids="${type}" aria-hidden="true" tabindex="-1"></textarea>
+        </div>
     </div>`;
 }
+
+function openPeopleEditor(button){
+    const box=button.closest('.people-box');
+    const modal=box && box.querySelector('[data-people-modal]');
+    if(!modal)return;
+    modal.classList.add('is-open');
+    document.body.style.overflow='hidden';
+    const first=modal.querySelector('[data-people-rows] input');
+    if(first)setTimeout(()=>first.focus(),30);
+}
+function closePeopleEditor(element){
+    const modal=element.matches('[data-people-modal]')?element:element.closest('[data-people-modal]');
+    if(!modal)return;
+    modal.classList.remove('is-open');
+    if(!document.querySelector('.people-editor-modal.is-open'))document.body.style.overflow='';
+}
+
 
 /*
   دعم لصق عمودي الاسم والرقم الذاتي معاً من Excel بأي ترتيب.
@@ -648,40 +689,119 @@ function isLikelySelfId(value){
     return /[0-9٠-٩۰-۹]/.test(text) && /^[0-9٠-٩۰-۹\s\-–—./]+$/.test(text);
 }
 
+function renderPeopleRows(box,minimumCount=5){
+    const type=box.dataset.peopleBox;
+    const names=parseLines(box.querySelector(`[data-people-names="${type}"]`).value);
+    const ids=parseLines(box.querySelector(`[data-people-ids="${type}"]`).value);
+    const count=Math.max(minimumCount,names.length,ids.length);
+    const host=box.querySelector(`[data-people-rows="${type}"]`);
+    host.innerHTML="";
+    for(let i=0;i<count;i++){
+        const row=document.createElement("div"); row.className="people-pair-row";
+        row.innerHTML=`<span class="people-pair-index">${i+1}</span><input type="text" autocomplete="off" aria-label="الاسم الثلاثي، السطر ${i+1}" placeholder="اكتب الاسم الثلاثي" value=""><input type="text" autocomplete="off" aria-label="الرقم الذاتي، السطر ${i+1}" placeholder="اكتب الرقم الذاتي" value="">`;
+        const fields=row.querySelectorAll("input"); fields[0].value=names[i]||""; fields[1].value=ids[i]||"";
+        fields.forEach(input=>input.addEventListener("input",()=>syncPeopleRows(box)));
+        fields.forEach(input=>input.addEventListener("paste",event=>handlePeoplePaste(event,input)));
+        host.appendChild(row);
+    }
+}
+function syncPeopleRows(box){
+    const type=box.dataset.peopleBox;
+    const rows=[...box.querySelectorAll(`[data-people-rows="${type}"] .people-pair-row`)];
+    box.querySelector(`[data-people-names="${type}"]`).value=rows.map(r=>r.querySelectorAll("input")[0].value).join("\n");
+    box.querySelector(`[data-people-ids="${type}"]`).value=rows.map(r=>r.querySelectorAll("input")[1].value).join("\n");
+    updatePeopleCount(box.querySelector(`[data-people-names="${type}"]`));
+}
+function addPeopleRow(button){
+    const box=button.closest(".people-box");
+    const type=box.dataset.peopleBox;
+    const names=box.querySelector(`[data-people-names="${type}"]`);
+    const ids=box.querySelector(`[data-people-ids="${type}"]`);
+    const currentRows=box.querySelectorAll(`[data-people-rows="${type}"] .people-pair-row`).length;
+    const n=parseLines(names.value), d=parseLines(ids.value);
+    names.value=n.join("\n"); ids.value=d.join("\n");
+    renderPeopleRows(box,currentRows+1);
+    const inputs=box.querySelectorAll(`[data-people-rows="${type}"] .people-pair-row:last-child input`);
+    if(inputs[0])inputs[0].focus();
+    updatePeopleCount(names);
+}
+
 function handlePeoplePaste(event,element){
     const clipboard=event.clipboardData || window.clipboardData;
     if(!clipboard)return;
     const pasted=clipboard.getData("text");
-    if(!pasted || !pasted.includes("\t"))return; // لصق عمود واحد: السلوك الطبيعي
+    if(!pasted)return;
 
     const box=element.closest(".people-box");
     if(!box)return;
     const type=box.dataset.peopleBox;
-    const rows=pasted.replace(/\r\n/g,"\n").replace(/\r/g,"\n").split("\n");
-    while(rows.length && rows[rows.length-1]==="")rows.pop();
-    if(!rows.length || !rows.some(row=>row.includes("\t")))return;
+    const row=element.closest(".people-pair-row");
+    if(!row)return;
 
-    const parsed=rows.map(row=>{
-        const cells=row.split("\t");
+    const rowIndex=[...box.querySelectorAll(`[data-people-rows="${type}"] .people-pair-row`)].indexOf(row);
+    const columnIndex=[...row.querySelectorAll("input")].indexOf(element);
+    if(rowIndex<0 || columnIndex<0)return;
+
+    const normalized=pasted.replace(/\r\n/g,"\n").replace(/\r/g,"\n");
+    const lines=normalized.split("\n");
+    while(lines.length && lines[lines.length-1]==="")lines.pop();
+    if(!lines.length)return;
+
+    const namesField=box.querySelector(`[data-people-names="${type}"]`);
+    const idsField=box.querySelector(`[data-people-ids="${type}"]`);
+
+    // خذ نسخة حديثة من جميع الخانات قبل معالجة اللصق؛ لا تعتمد على
+    // القيم المخزنة سابقاً فقط، حتى لا تُمحى الأسماء عند لصق الأرقام (أو العكس).
+    syncPeopleRows(box);
+    const names=parseLines(namesField.value);
+    const ids=parseLines(idsField.value);
+
+    // عند لصق عمود واحد: طابقه من السطر الأول دائماً مع العمود المقابل،
+    // ولا تبدأ من السطر الذي كان المؤشر فيه؛ حتى لا تنضاف البيانات أسفل القائمة.
+    if(!normalized.includes("\t")){
+        if(lines.length===1 && !normalized.includes("\n"))return;
+        event.preventDefault();
+        const target=columnIndex===0?names:ids;
+        lines.forEach((line,index)=>target[index]=line.trim());
+        // نعدّل العمود المستهدف فقط ونحافظ تماماً على العمود المقابل.
+        namesField.value=names.join("\n");
+        idsField.value=ids.join("\n");
+        renderPeopleRows(box,Math.max(5,names.length,ids.length));
+        updatePeopleCount(namesField);
+        const nextRow=box.querySelectorAll(`[data-people-rows="${type}"] .people-pair-row`)[Math.min(lines.length,Math.max(names.length,ids.length)-1)];
+        const nextInput=nextRow && nextRow.querySelectorAll("input")[columnIndex];
+        if(nextInput)nextInput.focus();
+        return;
+    }
+
+    // عند لصق عمودين معاً، اكتشف تلقائياً أيهما الأسماء وأيهما الأرقام.
+    const parsed=lines.map(line=>{
+        const cells=line.split("\t");
         return [(cells[0]??"").trim(),(cells[1]??"").trim()];
     });
-    const filled=parsed.filter(row=>row[0] || row[1]);
-    const firstNumeric=filled.filter(row=>row[0] && isLikelySelfId(row[0])).length;
-    const secondNumeric=filled.filter(row=>row[1] && isLikelySelfId(row[1])).length;
+    const filled=parsed.filter(cells=>cells[0] || cells[1]);
+    const firstNumeric=filled.filter(cells=>cells[0] && isLikelySelfId(cells[0])).length;
+    const secondNumeric=filled.filter(cells=>cells[1] && isLikelySelfId(cells[1])).length;
     const reverseOrder=firstNumeric>secondNumeric;
-
-    const names=parsed.map(row=>row[reverseOrder?1:0]);
-    const ids=parsed.map(row=>row[reverseOrder?0:1]);
+    const pastedNames=parsed.map(cells=>cells[reverseOrder?1:0]);
+    const pastedIds=parsed.map(cells=>cells[reverseOrder?0:1]);
 
     event.preventDefault();
-    box.querySelector(`[data-people-names="${type}"]`).value=names.join("\n");
-    box.querySelector(`[data-people-ids="${type}"]`).value=ids.join("\n");
-    updatePeopleCount(element);
+    while(names.length<rowIndex)names.push("");
+    while(ids.length<rowIndex)ids.push("");
+    pastedNames.forEach((value,index)=>names[rowIndex+index]=value);
+    pastedIds.forEach((value,index)=>ids[rowIndex+index]=value);
+    namesField.value=names.join("\n");
+    idsField.value=ids.join("\n");
+    renderPeopleRows(box,Math.max(5,names.length,ids.length));
+    updatePeopleCount(namesField);
 }
 
 function updatePeopleCount(element){
     const box=element.closest(".people-box");
     const type=box.dataset.peopleBox;
+    const rowsHost=box.querySelector(`[data-people-rows="${type}"]`);
+    if(rowsHost && !rowsHost.children.length)renderPeopleRows(box);
 
     const namesText=box.querySelector(`[data-people-names="${type}"]`).value;
     const idsText=box.querySelector(`[data-people-ids="${type}"]`).value;
